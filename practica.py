@@ -1,44 +1,44 @@
-import json
+import argparse
 import sys
-
-
-def load_config(config_path):
-    try:
-        with open(config_path, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print(f"Ошибка: Конфигурационный файл {config_path} не найден")
-        sys.exit(1)
-    except json.JSONDecodeError:
-        print(f"Ошибка: Неверный формат JSON в файле {config_path}")
-        sys.exit(1)
-
-
-def validate_config(config):
-    required_params = [
-        "package_name",
-        "repository_url",
-        "test_mode",
-        "version"
-    ]
-
-    for param in required_params:
-        if param not in config:
-            print(f"Ошибка: Отсутствует обязательный параметр {param}")
-            sys.exit(1)
-
-        if not config[param]:
-            print(f"Ошибка: Параметр {param} не может быть пустым")
-            sys.exit(1)
+import os
 
 
 def main():
-    config = load_config("config.json")
-    validate_config(config)
+    parser = argparse.ArgumentParser()
 
-    print("Настраиваемые параметры:")
-    for key, value in config.items():
-        print(f"{key}: {value}")
+    # Параметры
+    parser.add_argument('--package', type=str, required=True)
+    parser.add_argument('--source', type=str, required=True)
+    parser.add_argument('--test-repo-mode', action='store_true')
+    parser.add_argument('--max-depth', type=int, default=0)
+    args = parser.parse_args()
+
+    try:
+        # Валидация параметров
+        if not args.package or not args.package.strip():
+            raise ValueError("Package name cannot be empty")
+
+        if not args.source or not args.source.strip():
+            raise ValueError("Source cannot be empty")
+
+        if args.max_depth < 0:
+            raise ValueError("Max depth cannot be negative")
+
+        # Проверка существования файла для локального пути
+        if args.test_repo_mode and not args.source.startswith(('http://', 'https://')):
+            if not os.path.exists(args.source):
+                raise FileNotFoundError(f"Source file not found: {args.source}")
+
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    # Вывод всех параметров в формате ключ-значение
+    print("Configuration parameters:")
+    print(f"package: {args.package}")
+    print(f"source: {args.source}")
+    print(f"test_repo_mode: {args.test_repo_mode}")
+    print(f"max_depth: {args.max_depth}")
 
 
 if __name__ == "__main__":
